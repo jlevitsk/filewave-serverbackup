@@ -249,7 +249,7 @@ rsync -aL /etc/xdg/filewave/fwxserver.conf "$TEMPDIR"/
 #Backup custom installer files
 log "Backing up custom installer files"
 rsync -aL /usr/local/filewave/fwcld/FileWaveClient.msi "$TEMPDIR"/
-rsync -aL /usr/local/filewave/fwcld/FileWaveClient.exe "$TEMPDIR"/
+rsync -aL /usr/local/filewave/fwcld/FileWaveClient.pkg "$TEMPDIR"/
 
 #bundle up the database backup
 log "zipping...."
