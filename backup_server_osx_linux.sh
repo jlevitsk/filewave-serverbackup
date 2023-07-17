@@ -6,7 +6,7 @@ log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.2"
+version="4.3"
 
 function log()
 {
@@ -19,6 +19,7 @@ function syntaxError
 SCRIPTLOCATION="$(cd "$(dirname "$0")"; pwd)/$(basename "$0")"
  /bin/echo "+-------------------------------------------------------------------------------------------------------------------"
  /bin/echo "|  Summary:								                                                "
+ /bin/echo "|  Version $version												"
  /bin/echo "|  This script is used to schedule and run FileWave Server backups. It works on both Linux and OS X                 "
  /bin/echo "|  Scheduling is setup using cron jobs (crontab) on both OS X and Linux.                                   	    	" 
  /bin/echo "|  Automated backups run at 12:01 AM either weekly or daily, depending on how you configure it. see examples	"
@@ -240,6 +241,15 @@ rsync -aL /usr/local/filewave/django/filewave/settings_custom.py "$TEMPDIR"/
 #backup apache password files for local enrolment users
 log "backing up apache htpasswd files"
 rsync -aL /usr/local/filewave/apache/passwd/* "$TEMPDIR"/
+
+#backup fwxserver.conf
+log "backing up fwxserver.conf"
+rsync -aL /etc/xdg/filewave/fwxserver.conf "$TEMPDIR"/
+
+#Backup custom installer files
+log "Backing up custom installer files"
+rsync -aL /usr/local/filewave/fwcld/FileWaveClient.msi "$TEMPDIR"/
+rsync -aL /usr/local/filewave/fwcld/FileWaveClient.exe "$TEMPDIR"/
 
 #bundle up the database backup
 log "zipping...."
