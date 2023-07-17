@@ -6,7 +6,7 @@ log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.5"
+version="4.5.1"
 
 function log()
 {
@@ -268,6 +268,10 @@ rsync -aL /usr/local/filewave/django/filewave/settings_custom.py "$TEMPDIR"/
 #backup apache password files for local enrolment users
 log "backing up apache htpasswd files"
 rsync -aL /usr/local/filewave/apache/passwd/* "$TEMPDIR"/
+
+#backup fwxcodes
+log "backing up fwxcodes"
+rsync -aL /usr/local/etc/fwxcodes "$TEMPDIR"/
 
 #backup fwxserver.conf
 log "backing up fwxserver.conf"

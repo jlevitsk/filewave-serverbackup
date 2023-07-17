@@ -11,15 +11,11 @@ Changes to the script
 27-09-2019 : added alternative path detection for fw 13.1.4+ ; added backup for DEP enrolment passwords ; restored functionality to start postgres in case it is not running
 27-09-2019 : added relevant paths to backup script for syntaxError
 03-10-2019 : added support for destination paths with spaces in them
-
 ############ VERSION 3 ############
 31-08-2021 : changed cp to rsync and zip to tar to preserve ownership and permissions. cd /tmp/ then open tar with: tar xvpfz [path to tar.gz]
-
 ############ VERSION 4.2 ###########
 08-12-2021 : fixed issue where paths with spaces failed to write correclty to cron
 
-############ VERSION 4.5 ###########
-07-17-2023 : Backup custom installer files and Backup fwxserver.conf
-
-############ VERSION 4.5 ###########
-07-17-2023 : Restore command added. At this point it just unpacks the files to an output folder
+Reboot of utility from Josh
+4.5.0 - Restore command added. At this point it just unpacks the files to an output folder, Backup custom installer files and Backup fwxserver.conf
+4.5.1 - Now backing up /usr/local/etc/fwxcodes
