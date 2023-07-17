@@ -1,26 +1,12 @@
 #!/bin/sh
-#fwxserver hotbackup script for macOS/Linux, christiang@filewave.com 23-jan-2013
-#specify backup destination as first parameter or as DESTINATION below
-#rememeber to use " " quotes if you have spaces/nonascii chars in path
-#revision for v.11 , 28-APR-2016 : skip sqlite in case it's not there; backup apache passwords file ; backup media folder ; fixed issues with free space calculation 
-#Alex Fredlake Feburary 26th 2018: Fixed backup of media folder as it was putting the files in the ipa folder instead of in a media folder. Also changed it to backup the entire passwords folder
-#revision, 03-JAN-2019 : updated pg_dump command ; quoted BASEDESTINATION and TEMPDIR ; added backup of httpd_webadmin.conf and settings_custom.py
-#revision, 29-03-2019 : added if to exit if destination path uses shortcut
-#revision, 27-09-2019 : added alternative path detection for fw 13.1.4+ ; added backup for DEP enrolment passwords ; restored functionality to start postgres in case it is not running
-#revision, 27-09-2019 : added relevant paths to backup script for syntaxError
-#revision, 03-10-2019 : added support for destination paths with spaces in them
-############ VERSION 3 ############
-#revision, 31-08-2021 : changed cp to rsync and zip to tar to preserve ownership and permissions. cd /tmp/ then open tar with: tar xvpfz [path to tar.gz]
-############ VERSION 4 ###########
-#REVISION, 08-12-2021 : fixed issue where paths with spaces failed to write correclty to cron
-############ VERSION 5 ###########
-#revision, 07-17-2023 : Updated to account for a complete backup of FW 15
 
 ################################################################################
 
 log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
+
+version="4.2"
 
 function log()
 {
