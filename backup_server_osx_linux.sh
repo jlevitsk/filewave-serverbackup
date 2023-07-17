@@ -6,7 +6,7 @@ log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.4"
+version="4.5"
 
 function log()
 {
@@ -16,27 +16,31 @@ function log()
 
 function syntaxError
 {
-SCRIPTLOCATION="$(cd "$(dirname "$0")"; pwd)/$(basename "$0")"
+#SCRIPTLOCATION="$(cd "$(dirname "$0")"; pwd)/$(basename "$0")"
+SCRIPT=$0
  /bin/echo "+-------------------------------------------------------------------------------------------------------------------"
- /bin/echo "|  Summary:								                                                "
- /bin/echo "|  Version $version												"
+ /bin/echo "|  Summary:                                                                                                         "
+ /bin/echo "|  Version $version                                                                                                "
  /bin/echo "|  This script is used to schedule and run FileWave Server backups. It works on both Linux and OS X                 "
- /bin/echo "|  Scheduling is setup using cron jobs (crontab) on both OS X and Linux.                                   	    	" 
- /bin/echo "|  Automated backups run at 12:01 AM either weekly or daily, depending on how you configure it. see examples	"
- /bin/echo "|  Weekly backup will run every Friday night at 12:01 AM								"
- /bin/echo "|  This script, if ran automatically at night, will restart the FileWave server if postgres is not running	"
+ /bin/echo "|  Scheduling is setup using cron jobs (crontab) on both OS X and Linux.                                            " 
+ /bin/echo "|  Automated backups run at 12:01 AM either weekly or daily, depending on how you configure it. see examples       "
+ /bin/echo "|  Weekly backup will run every Friday night at 12:01 AM                                                            "
+ /bin/echo "|  This script, if ran automatically at night, will restart the FileWave server if postgres is not running         "
+ /bin/echo "|  You can also use this script to restore a backup using the restore command                                      "
  /bin/echo "+-------------------------------------------------------------------------------------------------------------------"
- /bin/echo "|  Examples:												        "
- /bin/echo "|														   	"
- /bin/echo "|  		Automated Backups:										   	" 
- /bin/echo "|                   $SCRIPTLOCATION setup daily  /Volumes/backupFolder_path 			   	        "
- /bin/echo "|                   $SCRIPTLOCATION setup weekly  /Volumes/backupFolder_path 			   	        "
- /bin/echo "|  	        Manual Backups:											   	"
- /bin/echo "|                   $SCRIPTLOCATION run /Volumes/backupFolder_path   manual				   	"
- /bin/echo "|														   	"
+ /bin/echo "|  Examples:                                                                                                        "
+ /bin/echo "|                                                      "
+ /bin/echo "|           Automated Backups:                                                                                      " 
+ /bin/echo "|                   $SCRIPT setup daily  /Volumes/backupFolder_path                                        "
+ /bin/echo "|                   $SCRIPT setup weekly  /Volumes/backupFolder_path                                       "
+ /bin/echo "|           Manual Backups:                                                                                        "
+ /bin/echo "|                   $SCRIPT run /Volumes/backupFolder_path   manual                                        "
+ /bin/echo "|           Restore Backup:                                                                                        "
+ /bin/echo "|                   $SCRIPT restore /path/to/backup.tar.gz                                                 "
+ /bin/echo "|                                                  "
  /bin/echo "+-------------------------------------------------------------------------------------------------------------------"
- 
 }
+
 
 #check if running as root
 if [ ! $(whoami) == "root" ] ; then
@@ -53,8 +57,11 @@ if [ "$1" == "setup" ] ; then
   fi
   log "Base destination is $3"
   BASEDESTINATION="$3"
-  CRONDESTINATION=$( echo "$3" | sed 's/\ /\\\ /g')
-  SCRIPTPATH=$( echo "$0" | sed 's/\ /\\\ /g')
+  CRONDESTINATION=$( echo "$3" | sed 's/\ /\\\ /g') 
+#SCRIPTPATH=$( echo "$0" | sed 's/\ /\\\ /g')
+  SCRIPTPATH=$(realpath "$0")
+  SCRIPTPATH=$( echo "$SCRIPTPATH" | sed 's/\\ /\\\\\\ /g')
+
  
   if [ "$2" == "weekly" ] ; then
     	log "weekly..."
@@ -87,6 +94,26 @@ elif [ "$1" == "run" ] ; then
   # either now (means we running this script manually now) or 'automated' (this script is running from a scheduled task like cronjob)
   # the reason is that: while in automated mode, we don't care if the script restarts the server services if we have to, to be able to run postgres and dump the pg_data.
   MODE=$3
+
+elif [ "$1" == "restore" ] ; then
+  if [ ! "$#" == "2" ] ; then
+    syntaxError
+    exit
+  fi
+  ARCHIVE_PATH=$2
+  if [ ! -f $ARCHIVE_PATH ]; then
+    log "Archive file not found: $ARCHIVE_PATH"
+    exit
+  fi
+  log "Starting restore from $ARCHIVE_PATH"
+  if [ -d "restore" ]; then
+    log "Existing restore directory found."
+  fi
+  mkdir restore
+  tar -xzf $ARCHIVE_PATH -C restore
+  log "Restore completed: Note that in this version of the script the next copies and database restore are manual"
+  exit
+
 
 else syntaxError
      exit    

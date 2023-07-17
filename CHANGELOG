@@ -18,5 +18,8 @@ Changes to the script
 ############ VERSION 4.2 ###########
 08-12-2021 : fixed issue where paths with spaces failed to write correclty to cron
 
-############ VERSION 4.3 ###########
+############ VERSION 4.5 ###########
 07-17-2023 : Backup custom installer files and Backup fwxserver.conf
+
+############ VERSION 4.5 ###########
+07-17-2023 : Restore command added. At this point it just unpacks the files to an output folder
