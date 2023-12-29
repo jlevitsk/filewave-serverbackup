@@ -1,6 +1,7 @@
 Changes to the script
 ----------------------------------
 
+############ VERSION 1 ############
 #fwxserver hotbackup script for macOS/Linux, christiang@filewave.com 23-jan-2013
 #specify backup destination as first parameter or as DESTINATION below
 #rememeber to use " " quotes if you have spaces/nonascii chars in path
@@ -15,8 +16,9 @@ Changes to the script
 31-08-2021 : changed cp to rsync and zip to tar to preserve ownership and permissions. cd /tmp/ then open tar with: tar xvpfz [path to tar.gz]
 ############ VERSION 4.2 ###########
 08-12-2021 : fixed issue where paths with spaces failed to write correclty to cron
-
+############ VERSION 4.5.x #########
 Reboot of utility from Josh
 4.5.0 - Restore command added. At this point it just unpacks the files to an output folder, Backup custom installer files and Backup fwxserver.conf
 4.5.1 - Now backing up /usr/local/etc/fwxcodes
-4.5.2 - Now using bash for Debian compatibility
+4.5.2 - Now using bash for Debian compatibility. In the future we should switch to zsh.
+4.5.3 - Backing up grafana.db, postgresql config, prometheus jobs, and are using /tmp for the temp files like we should have

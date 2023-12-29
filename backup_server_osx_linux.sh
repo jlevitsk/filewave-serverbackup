@@ -6,7 +6,7 @@ log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.5.2"
+version="4.5.3"
 
 function log()
 {
@@ -141,7 +141,8 @@ if [ ! -d "$BASEDESTINATION" ] ; then
 fi
 
 #define the temporary location and archive name here
-TEMPDIR="$BASEDESTINATION"/tmp/fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)
+#TEMPDIR="$BASEDESTINATION"/tmp/fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)
+TEMPDIR=/tmp/fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)
 #make sure tempdir is created:
 log "Making temp path: $TEMPDIR"
 mkdir -p "$TEMPDIR"
@@ -234,7 +235,8 @@ if [ ! -f "/tmp/.s.PGSQL.9432.lock" ]; then
 fi
 
 log "dumping MDM postgres database to :${TEMPDIR}/DB/mdm-dump.sql"
-cd /
+#cd /
+mkdir -p "$TEMPDIR"/DB
 /usr/local/filewave/postgresql/bin/pg_dump -U django --encoding=UTF8 -f "$TEMPDIR"/DB/mdm-dump.sql -N committed_* -c -d mdm
 
 #patch for version 11 ; skip sqlite backups in case they're not there
@@ -249,6 +251,7 @@ if [ -f '/fwxserver/DB/admin.sqlite' ] ; then
 fi
 
 log "Backing up Server Certs.."
+mkdir -p "$TEMPDIR"/certs
 rsync -aL /usr/local/filewave/certs/* "$TEMPDIR"/certs
 
 # Backup apache conf files
@@ -277,12 +280,26 @@ rsync -aL /usr/local/etc/fwxcodes "$TEMPDIR"/
 log "backing up fwxserver.conf"
 rsync -aL /etc/xdg/filewave/fwxserver.conf "$TEMPDIR"/
 
-#Backup custom installer files
-log "Backing up custom installer files"
-rsync -aL /usr/local/filewave/fwcld/FileWaveClient.msi "$TEMPDIR"/
-rsync -aL /usr/local/filewave/fwcld/FileWaveClient.pkg "$TEMPDIR"/
+# Backup /usr/local/etc/filewave/prometheus/conf.d/jobs/http/*
+log "Backing up Prometheus HTTP jobs"
+mkdir -p "$TEMPDIR"/prometheus_http_jobs
+rsync -aL /usr/local/etc/filewave/prometheus/conf.d/jobs/http/* "$TEMPDIR"/prometheus_http_jobs/
 
-#bundle up the database backup
+# Backup /usr/local/etc/filewave/prometheus/conf.d/jobs/https/*
+log "Backing up Prometheus HTTPS jobs"
+mkdir -p "$TEMPDIR"/prometheus_https_jobs
+rsync -aL /usr/local/etc/filewave/prometheus/conf.d/jobs/https/* "$TEMPDIR"/prometheus_https_jobs/
+
+# Backup /usr/local/filewave/instrumentation_data/grafana/grafana.db
+log "Backing up Grafana database"
+rsync -aL /usr/local/filewave/instrumentation_data/grafana/grafana.db "$TEMPDIR"/
+
+# Backup /usr/local/filewave/conf/user_postgresql.conf
+log "Backing up user PostgreSQL config"
+rsync -aL /usr/local/filewave/conf/user_postgresql.conf "$TEMPDIR"/
+
+###############################################
+#bundle up the database and config files backup
 log "zipping...."
 cd "$(dirname "$TEMPDIR")"
 tar cvpfz $(basename "$TEMPDIR").tar.gz $(basename "$TEMPDIR")
@@ -303,6 +320,12 @@ log "Starting rsync of media Folder to $DESTINATION/media.."
 rsync -aL /usr/local/filewave/media/ "$DESTINATION"/media
 echo "rsync media done"
 
+#rsync the custom msi and pkg folder
+log "Starting rsync of the custom client folder to $DESTINATION/fwcld.."
+rsync -aL /usr/local/filewave/fwcld/ "$DESTINATION"/fwcld
+echo "rsync fwcld done"
+
+###############################################
 #done 
 log "Removing temporary Backup Directory at $TEMPDIR"
 rm -rf "$TEMPDIR"
