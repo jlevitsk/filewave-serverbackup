@@ -65,17 +65,11 @@ if [ "$1" == "setup" ] ; then
  
   if [ "$2" == "weekly" ] ; then
     	log "weekly..."
-     	cd /usr/local/etc
-	/bin/echo "0 1 * * 5  " "$SCRIPTPATH" " run " "$CRONDESTINATION" automated > fwbackup_tab
-	/usr/bin/crontab fwbackup_tab
-	rm fwbackup_tab
+     	(crontab -l 2>/dev/null; /bin/echo "0 1 * * 5  " "$SCRIPTPATH" " run " "$CRONDESTINATION" automated) | /usr/bin/crontab -
     	exit
   elif  [ "$2" == "daily" ] ; then
      	log "daily...."
-	cd /usr/local/etc
-        /bin/echo "0 1 * * *  " "$SCRIPTPATH" " run " "$CRONDESTINATION" automated > fwbackup_tab
-        /usr/bin/crontab fwbackup_tab
-        rm fwbackup_tab
+	(crontab -l 2>/dev/null; /bin/echo "0 1 * * *  " "$SCRIPTPATH" " run " "$CRONDESTINATION" automated) | /usr/bin/crontab -
 	exit
   else  
     log "parameter not recognised : " "$2"
