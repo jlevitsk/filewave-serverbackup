@@ -6,7 +6,7 @@ log_file="/private/var/log/fw_backup.log"
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.5.3"
+version="4.5.4"
 
 function log()
 {
