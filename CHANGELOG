@@ -22,3 +22,4 @@ Reboot of utility from Josh
 4.5.1 - Now backing up /usr/local/etc/fwxcodes
 4.5.2 - Now using bash for Debian compatibility. In the future we should switch to zsh.
 4.5.3 - Backing up grafana.db, postgresql config, prometheus jobs, and are using /tmp for the temp files like we should have
+4.5.4 - Database dump removes -c because it could result in a dump that had issues
