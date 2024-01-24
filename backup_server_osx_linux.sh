@@ -237,7 +237,8 @@ fi
 log "dumping MDM postgres database to :${TEMPDIR}/DB/mdm-dump.sql"
 #cd /
 mkdir -p "$TEMPDIR"/DB
-/usr/local/filewave/postgresql/bin/pg_dump -U django --encoding=UTF8 -f "$TEMPDIR"/DB/mdm-dump.sql -N committed_* -c -d mdm
+# -c was in a prior version but was removed from below because it could result in the dump having issues.
+/usr/local/filewave/postgresql/bin/pg_dump -U django --encoding=UTF8 -f "$TEMPDIR"/DB/mdm-dump.sql -N committed_* -d mdm
 
 #patch for version 11 ; skip sqlite backups in case they're not there
 if [ -f '/fwxserver/DB/admin.sqlite' ] ; then
