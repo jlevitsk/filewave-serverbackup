@@ -4,14 +4,45 @@
 
 log_file="/private/var/log/fw_backup.log"
 
+# Optional: override the temporary working directory used for the database/config archive.
+# Leave blank for the platform default: /var/tmp/filewave-serverbackup on Linux,
+# /private/var/tmp/filewave-serverbackup on macOS. You can also override per run with
+# FW_BACKUP_TEMP_ROOT=/path/to/disk-backed-temp.
+temp_root=""
+
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.5.4"
+version="4.5.5"
 
 function log()
 {
  echo $1
  echo `date` ' | ' "$1" >> "$log_file"
+}
+
+function fs_type()
+{
+  if [ "$(uname)" == "Linux" ] ; then
+    df -PT "$1" 2>/dev/null | tail -n 1 | awk '{print $2}'
+  else
+    echo "unknown"
+  fi
+}
+
+function is_debian_13()
+{
+  if [ "$(uname)" != "Linux" ] || [ ! -f /etc/os-release ] ; then
+    return 1
+  fi
+  grep -Eq '^(VERSION_ID="?13|VERSION_CODENAME=trixie)' /etc/os-release
+}
+
+function cleanup_tempdir()
+{
+  if [ -n "$TEMPDIR" ] && [ -d "$TEMPDIR" ] ; then
+    log "Removing temporary Backup Directory at $TEMPDIR"
+    rm -rf "$TEMPDIR"
+  fi
 }
 
 function syntaxError
@@ -141,15 +172,47 @@ if [ ! -d "$BASEDESTINATION" ] ; then
 fi
 
 #define the temporary location and archive name here
-#TEMPDIR="$BASEDESTINATION"/tmp/fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)
-TEMPDIR=/tmp/fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)
-#make sure tempdir is created:
-log "Making temp path: $TEMPDIR"
-mkdir -p "$TEMPDIR"
-if [ ! -d "$TEMPDIR" ]; then
- log "Could not create dir $TEMPDIR"
+if [ -n "$FW_BACKUP_TEMP_ROOT" ] ; then
+  TEMP_ROOT="$FW_BACKUP_TEMP_ROOT"
+elif [ -n "$temp_root" ] ; then
+  TEMP_ROOT="$temp_root"
+elif [ "$(uname)" == "Darwin" ] ; then
+  TEMP_ROOT="/private/var/tmp/filewave-serverbackup"
+else
+  TEMP_ROOT="/var/tmp/filewave-serverbackup"
+fi
+
+case "$TEMP_ROOT" in
+  /*) ;;
+  *)
+    log "Please provide a full path for the temporary backup location: $TEMP_ROOT"
+    exit 1
+    ;;
+esac
+
+log "Using temporary backup root: $TEMP_ROOT"
+mkdir -p "$TEMP_ROOT"
+if [ ! -d "$TEMP_ROOT" ]; then
+ log "Could not create temporary backup root $TEMP_ROOT"
  exit 1
 fi
+
+if is_debian_13 && [ "$(fs_type /tmp)" == "tmpfs" ] ; then
+  log "Detected Debian 13 with /tmp mounted as tmpfs. This script uses $TEMP_ROOT for backup staging instead of /tmp."
+fi
+
+TEMP_FS_TYPE=$(fs_type "$TEMP_ROOT")
+if [ "$TEMP_FS_TYPE" == "tmpfs" ] ; then
+  log "WARNING: Temporary backup root $TEMP_ROOT is on tmpfs. Large backups may consume memory. Use FW_BACKUP_TEMP_ROOT or temp_root to choose a disk-backed path."
+fi
+
+TEMPDIR=$(mktemp -d "$TEMP_ROOT/fwxserver-Config-DB-XXXXXXXX")
+if [ -z "$TEMPDIR" ] || [ ! -d "$TEMPDIR" ]; then
+ log "Could not create temporary backup directory under $TEMP_ROOT"
+ exit 1
+fi
+trap cleanup_tempdir EXIT
+log "Using temporary backup path: $TEMPDIR"
 
 DESTINATION="$BASEDESTINATION"/fw-backups
 log "Making destination path: $DESTINATION"
@@ -193,7 +256,7 @@ log "rsync binary available: Ok"
 DESTFREE=$(df -Pk "$DESTINATION" | tail -n 1 | awk {'print $4'})
 TEMPFREE=$(df -Pk "$(dirname "$TEMPDIR")" | tail -n 1 | awk {'print $4'})
 BACKUPSIZE=$(du -sk "$SOURCEPATH"/DB | awk {'print $1'})
-#calculate minimum free size on /tmp and destination
+#calculate minimum free size on temporary backup root and destination
 ((BACKUPSIZE=$BACKUPSIZE*$SIZEFACTOR))
 #check destination FS space availability
 if [ $DESTFREE -lt $BACKUPSIZE ] ; then
@@ -202,11 +265,12 @@ if [ $DESTFREE -lt $BACKUPSIZE ] ; then
 fi
 #check temp FS space availability
 if [ $TEMPFREE -lt $BACKUPSIZE ] ; then
-	log "Not enough Space on /tmp for DB Backup"
+	log "Not enough free space in temporary backup root $TEMP_ROOT for DB Backup"
 	exit 1
 fi
 
 log "Free disk space to run backup: Ok"
+log "Temporary backup filesystem type: $TEMP_FS_TYPE"
 
 #start working
 log  "Creating temporary backup directory at $TEMPDIR"
@@ -328,6 +392,6 @@ echo "rsync fwcld done"
 
 ###############################################
 #done 
-log "Removing temporary Backup Directory at $TEMPDIR"
-rm -rf "$TEMPDIR"
+cleanup_tempdir
+trap - EXIT
 log "FileWave Server backup completed at $(date +%H-%M) on $(date +%b-%d-%Y)"

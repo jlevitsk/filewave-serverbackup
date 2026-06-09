@@ -21,5 +21,6 @@ Reboot of utility from Josh
 4.5.0 - Restore command added. At this point it just unpacks the files to an output folder, Backup custom installer files and Backup fwxserver.conf
 4.5.1 - Now backing up /usr/local/etc/fwxcodes
 4.5.2 - Now using bash for Debian compatibility. In the future we should switch to zsh.
-4.5.3 - Backing up grafana.db, postgresql config, prometheus jobs, and are using /tmp for the temp files like we should have
+4.5.3 - Backing up grafana.db, postgresql config, prometheus jobs; temporary archive staging was moved to /tmp
 4.5.4 - Database dump removes -c because it could result in a dump that had issues
+4.5.5 - Uses a disk-backed configurable temporary backup root by default (/var/tmp/filewave-serverbackup on Linux, /private/var/tmp/filewave-serverbackup on macOS) and warns when Debian 13 has /tmp mounted as tmpfs
