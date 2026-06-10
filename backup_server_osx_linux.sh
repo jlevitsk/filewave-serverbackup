@@ -12,7 +12,7 @@ temp_root=""
 
 ####################DO NOT MODIFY BELOW THIS LINE###############################
 
-version="4.5.5"
+version="4.5.6"
 
 function log()
 {
@@ -39,7 +39,10 @@ function is_debian_13()
 
 function cleanup_tempdir()
 {
-  if [ -n "$TEMPDIR" ] && [ -d "$TEMPDIR" ] ; then
+  if [ -n "$TEMP_PARENT" ] && [ -d "$TEMP_PARENT" ] ; then
+    log "Removing temporary Backup Directory at $TEMP_PARENT"
+    rm -rf "$TEMP_PARENT"
+  elif [ -n "$TEMPDIR" ] && [ -d "$TEMPDIR" ] ; then
     log "Removing temporary Backup Directory at $TEMPDIR"
     rm -rf "$TEMPDIR"
   fi
@@ -172,6 +175,7 @@ if [ ! -d "$BASEDESTINATION" ] ; then
 fi
 
 #define the temporary location and archive name here
+ARCHIVE_BASENAME="fwxserver-Config-DB-$(date +%b-%d-%y--%H-%M)"
 if [ -n "$FW_BACKUP_TEMP_ROOT" ] ; then
   TEMP_ROOT="$FW_BACKUP_TEMP_ROOT"
 elif [ -n "$temp_root" ] ; then
@@ -206,9 +210,15 @@ if [ "$TEMP_FS_TYPE" == "tmpfs" ] ; then
   log "WARNING: Temporary backup root $TEMP_ROOT is on tmpfs. Large backups may consume memory. Use FW_BACKUP_TEMP_ROOT or temp_root to choose a disk-backed path."
 fi
 
-TEMPDIR=$(mktemp -d "$TEMP_ROOT/fwxserver-Config-DB-XXXXXXXX")
-if [ -z "$TEMPDIR" ] || [ ! -d "$TEMPDIR" ]; then
+TEMP_PARENT=$(mktemp -d "$TEMP_ROOT/${ARCHIVE_BASENAME}-XXXXXXXX")
+if [ -z "$TEMP_PARENT" ] || [ ! -d "$TEMP_PARENT" ]; then
  log "Could not create temporary backup directory under $TEMP_ROOT"
+ exit 1
+fi
+TEMPDIR="$TEMP_PARENT/$ARCHIVE_BASENAME"
+mkdir -p "$TEMPDIR"
+if [ ! -d "$TEMPDIR" ]; then
+ log "Could not create temporary backup directory $TEMPDIR"
  exit 1
 fi
 trap cleanup_tempdir EXIT
@@ -366,9 +376,22 @@ rsync -aL /usr/local/filewave/conf/user_postgresql.conf "$TEMPDIR"/
 ###############################################
 #bundle up the database and config files backup
 log "zipping...."
-cd "$(dirname "$TEMPDIR")"
-tar cvpfz $(basename "$TEMPDIR").tar.gz $(basename "$TEMPDIR")
-mv $(basename "$TEMPDIR").tar.gz "$DESTINATION"
+ARCHIVE_TMP="$DESTINATION/${ARCHIVE_BASENAME}.tar.gz.partial"
+ARCHIVE_FINAL="$DESTINATION/${ARCHIVE_BASENAME}.tar.gz"
+rm -f "$ARCHIVE_TMP"
+tar -C "$(dirname "$TEMPDIR")" -cvpzf "$ARCHIVE_TMP" "$(basename "$TEMPDIR")"
+if [ $? -ne 0 ] ; then
+	log "Failed to create database/config archive at $ARCHIVE_TMP"
+	rm -f "$ARCHIVE_TMP"
+	exit 1
+fi
+mv "$ARCHIVE_TMP" "$ARCHIVE_FINAL"
+if [ $? -ne 0 ] ; then
+	log "Failed to move database/config archive to $ARCHIVE_FINAL"
+	rm -f "$ARCHIVE_TMP"
+	exit 1
+fi
+log "Database/config archive created at $ARCHIVE_FINAL"
 
 #rsync the data folder
 log "Starting rsync of Data Folder to $DESTINATION/Data Folder...."

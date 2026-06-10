@@ -4,7 +4,7 @@ The script that can backup and restore a FileWave Server. Download it, make it e
 
 ## Temporary backup location
 
-Version 4.5.5 no longer uses `/tmp` as the large temporary staging area for database/config archives. This matters on Debian 13, where `/tmp` is mounted as `tmpfs` by default and can consume memory.
+Version 4.5.6 uses `/var/tmp/filewave-serverbackup` on Linux and `/private/var/tmp/filewave-serverbackup` on macOS as the large temporary staging area for database/config archives. This matters on Debian 13, where `/tmp` is mounted as `tmpfs` by default and can consume memory. Database/config archive filenames keep the familiar date-based format, for example `fwxserver-Config-DB-Jun-10-26--01-00.tar.gz`.
 
 Default temporary roots:
 

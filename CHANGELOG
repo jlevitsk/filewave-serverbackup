@@ -24,3 +24,4 @@ Reboot of utility from Josh
 4.5.3 - Backing up grafana.db, postgresql config, prometheus jobs; temporary archive staging was moved to /tmp
 4.5.4 - Database dump removes -c because it could result in a dump that had issues
 4.5.5 - Uses a disk-backed configurable temporary backup root by default (/var/tmp/filewave-serverbackup on Linux, /private/var/tmp/filewave-serverbackup on macOS) and warns when Debian 13 has /tmp mounted as tmpfs
+4.5.6 - Restores the date-based database/config archive filename and top-level archive folder while keeping mktemp-based staging; writes the archive directly to the backup destination via a .partial file so failed runs do not leave large archive files in the temp root; uses portable tar option ordering
